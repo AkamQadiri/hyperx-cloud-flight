@@ -79,4 +79,4 @@ Feel free to [report any issues](https://github.com/AkamQadiri/hyperx-cloud-flig
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE) - see the [LICENSE.md](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
