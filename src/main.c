@@ -11,6 +11,8 @@ void handle_event(CloudFlight *cf, CloudFlightEvent event, bool *keepRunning)
     switch (event)
     {
     case CLOUD_FLIGHT_EVENT_BATTERY_CHARGING:
+        printf("Battery: Charging\n");
+        break;
     case CLOUD_FLIGHT_EVENT_BATTERY:
         printf("Battery: %i%%\n", cf->state.battery);
         break;
