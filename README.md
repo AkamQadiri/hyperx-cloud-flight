@@ -28,33 +28,15 @@ sudo apt install libhidapi-hidraw0
 sudo pacman -S hidapi
 ```
 
-#### udev
-
-Create a udev rule for the headset.
-This can be done by creating a new file at `/etc/udev/rules.d/99-hyperx-cloud-flight.rules` and adding the following content:
-
-```bash
-KERNEL=="hidraw*", ATTRS{idVendor}=="0951", ATTRS{idProduct}=="16c4", MODE="0666"
-KERNEL=="hidraw*", ATTRS{idVendor}=="0951", ATTRS{idProduct}=="1723", MODE="0666"
-```
-
-Once created, run:
-
-```bash
-udevadm control --reload-rules && udevadm trigger
-```
-
-or replug the wireless dongle.
-
 ### Build Instructions
 
 To build the project, use the provided `makefile`:
 
 ```bash
-make
+sudo make
 ```
 
-This will compile the source code and generate the executable in the `bin` directory.
+This will compile the source code and generate the executable in the `/usr/local/bin` directory.
 
 ### Usage
 
@@ -66,7 +48,7 @@ The `cloud_flight` tool provides a command-line interface to interact with the H
 Example usage:
 
 ```bash
-./bin/cloud_flight -r
+cloud_flight -r
 ```
 
 ## Acknowledgment
