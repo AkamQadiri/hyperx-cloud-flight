@@ -80,8 +80,6 @@ int main(int argc, char *argv[])
     } while (keepRunning);
 
     cloud_flight_free(cf);
-    hid_close(cf->device);
-    hid_exit();
 
     return 0;
 }

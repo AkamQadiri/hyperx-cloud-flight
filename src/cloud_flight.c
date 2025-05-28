@@ -7,26 +7,46 @@ const uint8_t CLOUD_FLIGHT_BATTERY_TRIGGER_PACKET[CLOUD_FLIGHT_BATTERY_TRIGGER_P
 
 uint8_t get_battery_percentage(uint8_t charge_state, uint8_t value)
 {
-    if (charge_state == CLOUD_FLIGHT_LOW_CHARGE) {
-        if (value < 90) return 10;
-        if (value < 120) return 15;
-        if (value < 150) return 20;
-        if (value < 160) return 25;
-        if (value < 170) return 30;
-        if (value < 180) return 35;
-        if (value < 190) return 40;
-        if (value < 200) return 45;
-        if (value < 210) return 50;
-        if (value < 220) return 55;
-        if (value < 240) return 60;
+    if (charge_state == CLOUD_FLIGHT_LOW_CHARGE)
+    {
+        if (value < 90)
+            return 10;
+        if (value < 120)
+            return 15;
+        if (value < 150)
+            return 20;
+        if (value < 160)
+            return 25;
+        if (value < 170)
+            return 30;
+        if (value < 180)
+            return 35;
+        if (value < 190)
+            return 40;
+        if (value < 200)
+            return 45;
+        if (value < 210)
+            return 50;
+        if (value < 220)
+            return 55;
+        if (value < 240)
+            return 60;
         return 65;
-    } else if (charge_state == CLOUD_FLIGHT_HIGH_CHARGE) {
-        if (value < 20) return 70;
-        if (value < 50) return 75;
-        if (value < 70) return 80;
-        if (value < 100) return 85;
-        if (value < 120) return 90;
-        if (value < 130) return 95;
+    }
+    else if (charge_state == CLOUD_FLIGHT_HIGH_CHARGE)
+    {
+        if (value < 20)
+            return 70;
+        if (value < 50)
+            return 75;
+        if (value < 70)
+            return 80;
+        if (value < 100)
+            return 85;
+        if (value < 120)
+            return 90;
+        if (value < 130)
+            return 95;
         return 100;
     }
 
@@ -71,7 +91,12 @@ void cloud_flight_free(CloudFlight *cf)
         return;
     }
 
-    hid_close(cf->device);
+    if (cf->device != NULL)
+    {
+        hid_close(cf->device);
+        hid_exit();
+    }
+
     free(cf);
 }
 
