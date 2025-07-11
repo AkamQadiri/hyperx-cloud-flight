@@ -19,7 +19,7 @@ Ensure that you have `hidraw` installed on your system.
 - Debian/Ubuntu
 
 ```bash
-sudo apt install libhidapi-hidraw0
+sudo apt install libhidapi-dev
 ```
 
 - Arch
