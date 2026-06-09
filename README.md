@@ -1,64 +1,47 @@
 # HyperX Cloud Flight
 
-## Introduction
+A command-line tool for monitoring the status of the [HyperX Cloud Flight Wireless Headset](https://hyperx.com/products/hyperx-cloud-flight?variant=41031691403421) on Linux. It prints battery level, charging state, volume changes, mute state, and power events, one event per line.
 
-This project implements a simple command-line tool for monitoring the status of the [HyperX Cloud Flight Wireless Headset](https://hyperx.com/products/hyperx-cloud-flight?variant=41031691403421).
+## Why
 
-### Why?
+HyperX's own [NGENUITY](https://hyperx.com/pages/ngenuity) software doesn't run on Linux. This tool covers that gap. Its line-based output drops straight into a custom status bar; see the [headset-battery script](https://github.com/AkamQadiri/dotfiles/blob/master/dotfiles/.config/i3blocks/scripts/headset-battery) and [i3blocks config](https://github.com/AkamQadiri/dotfiles/blob/master/dotfiles/.config/i3blocks/config) in my dotfiles for an example.
 
-You might wonder why create another solution when HyperX already provides [HyperX NGENUITY](https://hyperx.com/pages/ngenuity)? Well, the significant drawback of NGENUITY is its lack of support for Linux. That's why I created this tool, which is not only Linux-friendly but also easy to integrate into custom status bars. You can see an example of integration in my personal system configuration ([headset-battery](https://github.com/AkamQadiri/dotfiles/blob/master/dotfiles/.config/i3blocks/scripts/headset-battery), [i3blocks](https://github.com/AkamQadiri/dotfiles/blob/master/dotfiles/.config/i3blocks/config)).
+## Prerequisites
 
-## Getting Started
+Install the HIDAPI development package:
 
-### Prerequisites
+- Debian/Ubuntu: `sudo apt install libhidapi-dev`
+- Arch: `sudo pacman -S hidapi`
 
-#### hidraw
-
-Ensure that you have `hidraw` installed on your system.
-
-- Debian/Ubuntu
-
-```bash
-sudo apt install libhidapi-dev
-```
-
-- Arch
-
-```bash
-sudo pacman -S hidapi
-```
-
-### Build Instructions
-
-To build the project, use the provided `makefile`:
+## Build and install
 
 ```bash
 sudo make
 ```
 
-This will compile the source code and generate the executable in the `/usr/local/bin` directory.
+This compiles the source, installs the `cloud_flight` executable to `/usr/local/bin`, and adds a udev rule so the headset is readable without root. To remove both:
 
-### Usage
+```bash
+sudo make uninstall
+```
 
-The `cloud_flight` tool provides a command-line interface to interact with the HyperX Cloud Flight headset. It supports the following options:
-
-- `-r`: Read and quit.
-- `-h`: Display usage information.
-
-Example usage:
+## Usage
 
 ```bash
 cloud_flight -r
 ```
 
+Options:
+
+- `-r`: read the current status once and exit.
+- `-h`: show usage.
+
+Run without options to keep monitoring until the headset powers off.
+
 ## Acknowledgment
 
-I would like to clarify that I did not reverse engineer the packets myself. The required information was obtained from this [GitHub repository](https://github.com/kondinskis/hyperx-cloud-flight).
-
-## Help
-
-Feel free to [report any issues](https://github.com/AkamQadiri/hyperx-cloud-flight/issues) you may encounter while using this application.
+The packet format was taken from [kondinskis/hyperx-cloud-flight](https://github.com/kondinskis/hyperx-cloud-flight); I did not reverse engineer it myself.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+Licensed under the MIT License; see [LICENSE](LICENSE).
