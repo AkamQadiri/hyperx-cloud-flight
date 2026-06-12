@@ -13,7 +13,7 @@ typedef struct
 
 /* Raw value thresholds mapped to a percentage; 256 caps the last range. */
 static const BatteryRange LOW_CHARGE_RANGES[] = {
-    {90, 10}, {120, 15}, {150, 20}, {160, 25}, {170, 30}, {180, 35},
+    {90, 10}, {120, 15}, {149, 20}, {160, 25}, {170, 30}, {180, 35},
     {190, 40}, {200, 45}, {210, 50}, {220, 55}, {240, 60}, {256, 65},
 };
 
