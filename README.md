@@ -16,10 +16,11 @@ Install the HIDAPI development package:
 ## Build and install
 
 ```bash
-sudo make
+make
+sudo make install
 ```
 
-This compiles the source, installs the `cloud_flight` executable to `/usr/local/bin`, and adds a udev rule so the headset is readable without root. To remove both:
+This builds `cloud_flight` into `bin/`, installs it to `/usr/local/bin`, and adds a udev rule so the headset is readable without root. `PREFIX` and `DESTDIR` are honored for packaging. To remove the executable and the rule:
 
 ```bash
 sudo make uninstall
@@ -33,10 +34,10 @@ cloud_flight -r
 
 Options:
 
-- `-r`: read the current status once and exit.
+- `-r`: print the current battery status once and exit. Exits non-zero if the headset is off or no battery report arrives within a second, so scripts can tell a missing reading from a real one.
 - `-h`: show usage.
 
-Run without options to keep monitoring until the headset powers off.
+Run without options to keep monitoring until the headset powers off. The tool exits non-zero if the connection to the headset is lost.
 
 ## Acknowledgment
 

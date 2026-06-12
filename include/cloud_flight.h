@@ -35,7 +35,8 @@ typedef enum
     CLOUD_FLIGHT_EVENT_UNMUTED,
     CLOUD_FLIGHT_EVENT_POWER_OFF,
     CLOUD_FLIGHT_EVENT_POWER_ON,
-    CLOUD_FLIGHT_EVENT_IGNORED
+    CLOUD_FLIGHT_EVENT_IGNORED,
+    CLOUD_FLIGHT_EVENT_ERROR
 } CloudFlightEvent;
 
 typedef struct
@@ -52,9 +53,9 @@ typedef struct
     hid_device *device;
 } CloudFlight;
 
-CloudFlight *cloud_flight_new();
+CloudFlight *cloud_flight_new(void);
 void cloud_flight_free(CloudFlight *cf);
 CloudFlightEvent cloud_flight_read(CloudFlight *cf);
-void cloud_flight_send_battery_trigger_packet(CloudFlight *cf);
+int cloud_flight_send_battery_trigger_packet(CloudFlight *cf);
 
 #endif

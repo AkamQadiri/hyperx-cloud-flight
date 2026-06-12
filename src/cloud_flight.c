@@ -5,80 +5,67 @@
 const uint16_t CLOUD_FLIGHT_PRODUCT_IDS[CLOUD_FLIGHT_PRODUCT_IDS_COUNT] = {0x1723, 0x16c4};
 const uint8_t CLOUD_FLIGHT_BATTERY_TRIGGER_PACKET[CLOUD_FLIGHT_BATTERY_TRIGGER_PACKET_SIZE] = {0x21, 0xff, 0x05};
 
-uint8_t get_battery_percentage(uint8_t charge_state, uint8_t value)
+typedef struct
 {
-    if (charge_state == CLOUD_FLIGHT_LOW_CHARGE)
-    {
-        if (value < 90)
-            return 10;
-        if (value < 120)
-            return 15;
-        if (value < 150)
-            return 20;
-        if (value < 160)
-            return 25;
-        if (value < 170)
-            return 30;
-        if (value < 180)
-            return 35;
-        if (value < 190)
-            return 40;
-        if (value < 200)
-            return 45;
-        if (value < 210)
-            return 50;
-        if (value < 220)
-            return 55;
-        if (value < 240)
-            return 60;
-        return 65;
-    }
-    else if (charge_state == CLOUD_FLIGHT_HIGH_CHARGE)
-    {
-        if (value < 20)
-            return 70;
-        if (value < 50)
-            return 75;
-        if (value < 70)
-            return 80;
-        if (value < 100)
-            return 85;
-        if (value < 120)
-            return 90;
-        if (value < 130)
-            return 95;
-        return 100;
-    }
+    uint16_t below;
+    uint8_t percent;
+} BatteryRange;
 
-    return 0;
+/* Raw value thresholds mapped to a percentage; 256 caps the last range. */
+static const BatteryRange LOW_CHARGE_RANGES[] = {
+    {90, 10}, {120, 15}, {150, 20}, {160, 25}, {170, 30}, {180, 35},
+    {190, 40}, {200, 45}, {210, 50}, {220, 55}, {240, 60}, {256, 65},
+};
+
+static const BatteryRange HIGH_CHARGE_RANGES[] = {
+    {20, 70}, {50, 75}, {70, 80}, {100, 85}, {120, 90}, {130, 95}, {256, 100},
+};
+
+static void print_hid_error(const char *message, hid_device *device)
+{
+    const wchar_t *detail = hid_error(device);
+    fprintf(stderr, "%s: %ls\n", message, detail ? detail : L"unknown error");
 }
 
-CloudFlight *cloud_flight_new()
+static uint8_t get_battery_percentage(uint8_t charge_state, uint8_t value)
 {
-    CloudFlight *cf = (CloudFlight *)malloc(sizeof(CloudFlight));
-    if (cf == NULL)
+    const BatteryRange *range = charge_state == CLOUD_FLIGHT_HIGH_CHARGE ? HIGH_CHARGE_RANGES : LOW_CHARGE_RANGES;
+
+    while (value >= range->below)
     {
-        perror("Memory allocation failed");
-        exit(EXIT_FAILURE);
+        range++;
     }
 
-    cf->state.powered = false;
-    cf->state.muted = false;
-    cf->state.charging = false;
-    cf->state.battery = 0;
+    return range->percent;
+}
 
-    uint8_t pii = 0;
-    uint8_t products = CLOUD_FLIGHT_PRODUCT_IDS_COUNT;
-    while (cf->device == NULL && pii < products)
+CloudFlight *cloud_flight_new(void)
+{
+    if (hid_init())
     {
-        cf->device = hid_open(CLOUD_FLIGHT_VENDOR_ID, CLOUD_FLIGHT_PRODUCT_IDS[pii], NULL);
-        pii++;
+        fprintf(stderr, "Failed to initialize HIDAPI\n");
+        return NULL;
+    }
+
+    CloudFlight *cf = calloc(1, sizeof *cf);
+    if (cf == NULL)
+    {
+        perror("Failed to allocate memory");
+        hid_exit();
+        return NULL;
+    }
+
+    for (uint8_t i = 0; cf->device == NULL && i < CLOUD_FLIGHT_PRODUCT_IDS_COUNT; i++)
+    {
+        cf->device = hid_open(CLOUD_FLIGHT_VENDOR_ID, CLOUD_FLIGHT_PRODUCT_IDS[i], NULL);
     }
 
     if (cf->device == NULL)
     {
         fprintf(stderr, "Failed to open HID device\n");
-        exit(EXIT_FAILURE);
+        free(cf);
+        hid_exit();
+        return NULL;
     }
 
     return cf;
@@ -94,10 +81,10 @@ void cloud_flight_free(CloudFlight *cf)
     if (cf->device != NULL)
     {
         hid_close(cf->device);
-        hid_exit();
     }
 
     free(cf);
+    hid_exit();
 }
 
 CloudFlightEvent cloud_flight_read(CloudFlight *cf)
@@ -106,8 +93,8 @@ CloudFlightEvent cloud_flight_read(CloudFlight *cf)
     int bytes = hid_read_timeout(cf->device, buf, sizeof(buf), 250);
     if (bytes < 0)
     {
-        fprintf(stderr, "Error reading from HID device\n");
-        return CLOUD_FLIGHT_EVENT_IGNORED;
+        print_hid_error("Failed to read from HID device", cf->device);
+        return CLOUD_FLIGHT_EVENT_ERROR;
     }
 
     if (bytes == 2)
@@ -119,8 +106,11 @@ CloudFlightEvent cloud_flight_read(CloudFlight *cf)
         {
             if (value == CLOUD_FLIGHT_POWER_ON)
             {
-                cloud_flight_send_battery_trigger_packet(cf);
                 cf->state.powered = true;
+                if (cloud_flight_send_battery_trigger_packet(cf) < 0)
+                {
+                    return CLOUD_FLIGHT_EVENT_ERROR;
+                }
                 return CLOUD_FLIGHT_EVENT_POWER_ON;
             }
             else if (value == CLOUD_FLIGHT_POWER_OFF)
@@ -174,22 +164,25 @@ CloudFlightEvent cloud_flight_read(CloudFlight *cf)
             return CLOUD_FLIGHT_EVENT_BATTERY;
         }
 
-        uint8_t charge_state = buf[3];
-        uint8_t batteryPercent = get_battery_percentage(charge_state, value);
-        cf->state.charging = false;
-        cf->state.battery = batteryPercent;
-        return CLOUD_FLIGHT_EVENT_BATTERY;
+        if (packet == CLOUD_FLIGHT_LOW_CHARGE || packet == CLOUD_FLIGHT_HIGH_CHARGE)
+        {
+            cf->state.charging = false;
+            cf->state.battery = get_battery_percentage(packet, value);
+            return CLOUD_FLIGHT_EVENT_BATTERY;
+        }
     }
 
     return CLOUD_FLIGHT_EVENT_IGNORED;
 }
 
-void cloud_flight_send_battery_trigger_packet(CloudFlight *cf)
+int cloud_flight_send_battery_trigger_packet(CloudFlight *cf)
 {
     int bytes = hid_write(cf->device, CLOUD_FLIGHT_BATTERY_TRIGGER_PACKET, CLOUD_FLIGHT_BATTERY_TRIGGER_PACKET_SIZE);
     if (bytes < 0)
     {
-        fprintf(stderr, "Error writing to HID device\n");
-        exit(EXIT_FAILURE);
+        print_hid_error("Failed to write to HID device", cf->device);
+        return -1;
     }
+
+    return 0;
 }
